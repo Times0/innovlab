@@ -48,6 +48,7 @@ async def connect_to_drones(drone_ips: DroneIPs):
     global swarm
     swarm = TelloSwarm.fromIps(working)
     swarm.connect()
+    swarm.set
     print(len(swarm.tellos))
     return {"status": "connected"}
 
@@ -72,6 +73,7 @@ async def get_battery():
         battery[drone_name] = int(tello.get_battery())
         print(drone_name, battery[drone_name])
     print(battery, type(battery))
+    swarm.set_speed(90)
     return battery
 
 
@@ -112,13 +114,13 @@ async def execute_command(command_data: DroneCommand):
         if command_name == "flip":
             swarm.parallel(lambda _, tello: tello.flip_forward())
         elif command_name == "forward":
-            swarm.parallel(lambda _, tello: tello.move_forward(50))
+            swarm.parallel(lambda _, tello: tello.move_forward(500))
         elif command_name == "back":
-            swarm.parallel(lambda _, tello: tello.move_back(50))
+            swarm.parallel(lambda _, tello: tello.move_back(500))
         elif command_name == "left":
-            swarm.parallel(lambda _, tello: tello.move_left(50))
+            swarm.parallel(lambda _, tello: tello.move_left(500))
         elif command_name == "right":
-            swarm.parallel(lambda _, tello: tello.move_right(50))
+            swarm.parallel(lambda _, tello: tello.move_right(500))
         return {"status": "success", "command": command_data.command}
     except AttributeError:
         raise HTTPException(

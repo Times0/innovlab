@@ -1,7 +1,7 @@
 from djitellopy import TelloSwarm
 import rich
 
-swarm = TelloSwarm.fromIps(["192.168.114.15", "192.168.114.211", "192.168.114.86"])
+swarm = TelloSwarm.fromIps(["192.168.10.21"])
 
 swarm.connect()
 # show batery for each
@@ -10,9 +10,11 @@ for tello in swarm.tellos:
     battery = tello.get_battery()
     rich.print(f"{drone_name} battery: {battery}")
 
-# swarm.takeoff()
 
-# swarm.parallel(lambda _, tello: tello.flip_forward())
+swarm.takeoff()
+swarm.parallel(lambda _, tello: tello.flip_forward())
+swarm.stop()
+
 # swarm.parallel(lambda _, tello: tello.flip_back())
 # swarm.parallel(lambda _, tello: tello.flip_forward())
 # swarm.parallel(lambda _, tello: tello.flip_back())
@@ -21,5 +23,5 @@ for tello in swarm.tellos:
 
 
 
-# swarm.land()
+swarm.land()
 swarm.end()

@@ -7,9 +7,4 @@ export interface Drone {
   lastCommunication: string | null;
 }
 
-export interface DroneCommand {
-  type: "takeoff" | "land" | "emergency";
-  droneId?: string;
-}
-
 export type DroneCommand = "forward" | "backward" | "left" | "right" | "flip";

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DroneCard } from "./components/DroneCard";
 import { AddDroneForm } from "./components/AddDroneForm";
 import type { Drone, DroneCommand } from "./types/drone";
-import { Loader2 } from "lucide-react";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -143,6 +142,14 @@ function App() {
       if (!response.ok) {
         throw new Error("Failed to initiate takeoff");
       }
+      
+      setDrones((currentDrones) =>
+        currentDrones.map((drone) => ({
+          ...drone,
+          status: drone.isConnected ? "airborne" : drone.status,
+          lastCommunication: drone.isConnected ? new Date().toISOString() : drone.lastCommunication,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to takeoff");
     } finally {
@@ -159,6 +166,14 @@ function App() {
       if (!response.ok) {
         throw new Error("Failed to initiate landing");
       }
+
+      setDrones((currentDrones) =>
+        currentDrones.map((drone) => ({
+          ...drone,
+          status: drone.isConnected ? "grounded" : drone.status,
+          lastCommunication: drone.isConnected ? new Date().toISOString() : drone.lastCommunication,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to land");
     } finally {
@@ -166,10 +181,10 @@ function App() {
     }
   };
 
-  const handleAddDrone = (ipAddressLasDigit: string) => {
+  const handleAddDrone = (ipAddressLastDigit: string) => {
     const newDrone: Drone = {
       id: Math.random().toString(36).substr(2, 9),
-      ipAddress: "192.168.114." + ipAddressLasDigit,
+      ipAddress: ipAddressLastDigit,
       batteryLevel: null,
       status: "grounded",
       isConnected: false,
@@ -179,14 +194,12 @@ function App() {
   };
 
   const handleRemoveDrone = (id: string) => {
-    if (1) {
-      setDrones(drones.filter((drone) => drone.id !== id));
-      setSelectedDrones((prev) => {
-        const newSelection = new Set(prev);
-        newSelection.delete(id);
-        return newSelection;
-      });
-    }
+    setDrones(drones.filter((drone) => drone.id !== id));
+    setSelectedDrones((prev) => {
+      const newSelection = new Set(prev);
+      newSelection.delete(id);
+      return newSelection;
+    });
   };
 
   const sendCommand = async (command: DroneCommand) => {

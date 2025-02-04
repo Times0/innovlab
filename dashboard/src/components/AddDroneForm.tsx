@@ -6,7 +6,7 @@ interface AddDroneFormProps {
 }
 
 export function AddDroneForm({ onAdd }: AddDroneFormProps) {
-  const [ipAddress, setIpAddress] = useState("");
+  const [ipAddress, setIpAddress] = useState("192.168.10.");
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
