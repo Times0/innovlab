@@ -13,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDrones, setSelectedDrones] = useState<Set<string>>(new Set());
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("drones", JSON.stringify(drones));
@@ -228,42 +229,75 @@ function App() {
     }
   };
 
-  // Add keyboard event handler
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (!drones.some((drone) => drone.isConnected)) {
-        return; // Don't send commands if no drones are connected
+  const handleScanAndConnect = async () => {
+    setScanning(true);
+    setError(null);
+    try {
+      // First scan for available drones
+      const scanResponse = await fetch(`${API_URL}/scan`);
+      if (!scanResponse.ok) {
+        throw new Error("Failed to scan for drones");
+      }
+      const availableIps: string[] = await scanResponse.json();
+      
+      // Add new drones that aren't already in the list
+      const existingIps = new Set(drones.map(drone => drone.ipAddress));
+      const newDrones = availableIps
+        .filter(ip => !existingIps.has(ip))
+        .map(ip => ({
+          id: Math.random().toString(36).substr(2, 9),
+          ipAddress: ip,
+          batteryLevel: null,
+          status: "grounded",
+          isConnected: false,
+          lastCommunication: null,
+        }));
+      if (newDrones.length > 0) {
+        setDrones(currentDrones => [...currentDrones, ...newDrones.map(drone => ({
+          ...drone,
+          status: "grounded" as const
+        }))]);
       }
 
-      switch (event.key.toLowerCase()) {
-        case "arrowup":
-          sendCommand("forward");
-          break;
-        case "arrowdown":
-          sendCommand("backward");
-          break;
-        case "arrowleft":
-          sendCommand("left");
-          break;
-        case "arrowright":
-          sendCommand("right");
-          break;
-        case "f":
-          sendCommand("flip");
-          break;
-      }
-    };
+      // Attempt to connect to all discovered drones
+      const connectResponse = await fetch(`${API_URL}/connect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ips: availableIps,
+        }),
+      });
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [drones]); // Depend on drones array to re-attach listener when drone connection status changes
+      if (!connectResponse.ok) {
+        throw new Error("Failed to connect to discovered drones");
+      }
+
+      // Update the connection status for all drones
+      setDrones(currentDrones =>
+        currentDrones.map(drone => ({
+          ...drone,
+          isConnected: availableIps.includes(drone.ipAddress),
+          lastCommunication: availableIps.includes(drone.ipAddress)
+            ? new Date().toISOString()
+            : drone.lastCommunication,
+        }))
+      );
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to scan and connect");
+    } finally {
+      setScanning(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold text-gray-900">
-            Drone Battery Monitor
+            Drone Dashboard
           </h1>
           {loading && (
             <div className="flex items-center gap-2">
@@ -282,6 +316,20 @@ function App() {
         </div>
 
         <div className="flex space-x-4 items-center flex-wrap gap-y-2">
+          <button
+            onClick={handleScanAndConnect}
+            className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 disabled:opacity-50 flex items-center gap-2"
+            disabled={scanning}
+          >
+            {scanning ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              "Scan & Connect All"
+            )}
+          </button>
           <button
             onClick={handleConnect}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
@@ -336,8 +384,39 @@ function App() {
           </button>
           <span className="text-gray-600">Total Drones: {drones.length}</span>
         </div>
-
-        <AddDroneForm onAdd={handleAddDrone} />
+{/* Direction Control Pad */}
+<div className="flex flex-col items-center gap-2 max-w-[200px] mx-auto">
+          <button
+            onClick={() => sendCommand("forward")}
+            className="w-full py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
+            disabled={!drones.some((drone) => drone.isConnected)}
+          >
+            Forward
+          </button>
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={() => sendCommand("left")}
+              className="flex-1 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
+              disabled={!drones.some((drone) => drone.isConnected)}
+            >
+              Left
+            </button>
+            <button
+              onClick={() => sendCommand("right")}
+              className="flex-1 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
+              disabled={!drones.some((drone) => drone.isConnected)}
+            >
+              Right
+            </button>
+          </div>
+          <button
+            onClick={() => sendCommand("backward")}
+            className="w-full py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
+            disabled={!drones.some((drone) => drone.isConnected)}
+          >
+            Backward
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {drones.map((drone) => (
@@ -350,18 +429,9 @@ function App() {
             />
           ))}
         </div>
+        <AddDroneForm onAdd={handleAddDrone} />
 
-        {/* Add keyboard controls help text */}
-        <div className="mt-4 p-4 bg-white rounded shadow">
-          <h2 className="text-lg font-semibold mb-2">Keyboard Controls:</h2>
-          <ul className="space-y-1 text-gray-600">
-            <li>↑ - Move Forward</li>
-            <li>↓ - Move Backward</li>
-            <li>← - Move Left</li>
-            <li>→ - Move Right</li>
-            <li>F - Do a Flip</li>
-          </ul>
-        </div>
+        
       </div>
     </div>
   );

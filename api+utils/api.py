@@ -3,6 +3,7 @@ from typing import Dict, List
 from djitellopy import TelloSwarm, Tello
 import uvicorn
 from pydantic import BaseModel
+import nmap
 
 # cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -114,13 +115,13 @@ async def execute_command(command_data: DroneCommand):
         if command_name == "flip":
             swarm.parallel(lambda _, tello: tello.flip_forward())
         elif command_name == "forward":
-            swarm.parallel(lambda _, tello: tello.move_forward(500))
-        elif command_name == "back":
-            swarm.parallel(lambda _, tello: tello.move_back(500))
+            swarm.parallel(lambda _, tello: tello.move_forward(100))
+        elif command_name == "backward":
+            swarm.parallel(lambda _, tello: tello.move_back(100))
         elif command_name == "left":
-            swarm.parallel(lambda _, tello: tello.move_left(500))
+            swarm.parallel(lambda _, tello: tello.move_left(100))
         elif command_name == "right":
-            swarm.parallel(lambda _, tello: tello.move_right(500))
+            swarm.parallel(lambda _, tello: tello.move_right(100))
         return {"status": "success", "command": command_data.command}
     except AttributeError:
         raise HTTPException(
@@ -129,6 +130,31 @@ async def execute_command(command_data: DroneCommand):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to execute command: {str(e)}"
+        )
+
+
+@app.get("/scan", response_model=List[str])
+async def scan_network():
+    """Scan the network for Tello drones and return their IP addresses"""
+    try:
+        nm = nmap.PortScanner()
+        # Assuming default Tello network range, modify if needed
+        network_range = "192.168.10.0/24"
+        nm.scan(hosts=network_range, arguments="-sn")
+
+        drone_ips = []
+        for host in nm.all_hosts():
+            mac_address = nm[host]['addresses'].get('mac', 'Unknown MAC')
+            vendor = nm[host]['vendor'].get(mac_address, 'Unknown Vendor')
+
+            if vendor == "SZ DJI Technology":
+                drone_ips.append(host)
+
+        return drone_ips
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to scan network: {str(e)}"
         )
 
 
