@@ -3,9 +3,12 @@ from djitellopy import Tello
 tello = Tello()
 
 tello.connect()
+print(tello.get_battery())
+# tello.takeoff()
 
-tello.connect_to_wifi("OnePlus_12R", "dodoestbeau1")
+login = "InnovLab"
+password = "PASSWORD" # Put real password here
+tello.connect_to_wifi(login, password)
 
-#print(tello.TELLO_IP)
-#print(tello.)
-
+# print(tello.TELLO_IP)
+# print(tello.)
