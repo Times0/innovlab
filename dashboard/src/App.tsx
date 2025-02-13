@@ -19,23 +19,6 @@ function App() {
     localStorage.setItem("drones", JSON.stringify(drones));
   }, [drones]);
 
-  /* health check every minute */
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch(`${API_URL}/health_check`);
-        if (!response.ok) {
-          throw new Error("Failed to health check drones");
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to health check drones"
-        );
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleDroneSelect = (id: string, selected: boolean) => {
     setSelectedDrones((prev) => {
@@ -293,12 +276,18 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Drone Dashboard
-          </h1>
+        {/* Header Section */}
+        <div className="flex items-center justify-between bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-slate-800">
+              Drone Dashboard
+            </h1>
+            <span className="px-3 py-1 bg-slate-100 rounded-full text-slate-600 text-sm">
+              Total Drones: {drones.length}
+            </span>
+          </div>
           {loading && (
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
@@ -306,118 +295,118 @@ function App() {
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-sm text-red-500" title={error}>
-                Error
+            <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+              <span className="text-sm text-red-600" title={error}>
+                {error}
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex space-x-4 items-center flex-wrap gap-y-2">
-          <button
-            onClick={handleScanAndConnect}
-            className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 disabled:opacity-50 flex items-center gap-2"
-            disabled={scanning}
-          >
-            {scanning ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              "Scan & Connect All"
-            )}
-          </button>
-          <button
-            onClick={handleConnect}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-            disabled={drones.length === 0 || selectedDrones.size === 0}
-          >
-            Connect to Selected Drones
-          </button>
-          <button
-            onClick={handleDisconnect}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
-            disabled={
-              drones.length === 0 || !drones.some((drone) => drone.isConnected)
-            }
-          >
-            Disconnect Drones
-          </button>
-          <button
-            onClick={handleCheckBattery}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-            disabled={
-              drones.length === 0 || !drones.some((drone) => drone.isConnected)
-            }
-          >
-            Check Battery Levels
-          </button>
-          <button
-            onClick={handleTakeoff}
-            className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50"
-            disabled={
-              drones.length === 0 || !drones.some((drone) => drone.isConnected)
-            }
-          >
-            Take Off All
-          </button>
-          <button
-            onClick={handleLand}
-            className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
-            disabled={
-              drones.length === 0 || !drones.some((drone) => drone.isConnected)
-            }
-          >
-            Land All
-          </button>
-          <button
-            onClick={() => sendCommand("flip")}
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
-            disabled={
-              drones.length === 0 || !drones.some((drone) => drone.isConnected)
-            }
-          >
-            Do a Flip!
-          </button>
-          <span className="text-gray-600">Total Drones: {drones.length}</span>
-        </div>
-{/* Direction Control Pad */}
-<div className="flex flex-col items-center gap-2 max-w-[200px] mx-auto">
-          <button
-            onClick={() => sendCommand("forward")}
-            className="w-full py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
-            disabled={!drones.some((drone) => drone.isConnected)}
-          >
-            Forward
-          </button>
-          <div className="flex gap-2 w-full">
-            <button
-              onClick={() => sendCommand("left")}
-              className="flex-1 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
-              disabled={!drones.some((drone) => drone.isConnected)}
-            >
-              Left
-            </button>
-            <button
-              onClick={() => sendCommand("right")}
-              className="flex-1 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
-              disabled={!drones.some((drone) => drone.isConnected)}
-            >
-              Right
-            </button>
+        {/* Control Panels */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Connection Controls */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">Connection</h2>
+            <div className="space-y-3">
+              <button
+                onClick={handleScanAndConnect}
+                className="w-full bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                disabled={scanning}
+              >
+                {scanning ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  "Scan & Connect All"
+                )}
+              </button>
+              <button
+                onClick={handleConnect}
+                className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                disabled={drones.length === 0 || selectedDrones.size === 0}
+              >
+                Connect Selected
+              </button>
+              <button
+                onClick={handleDisconnect}
+                className="w-full border border-red-200 text-red-600 px-4 py-2.5 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Disconnect All
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => sendCommand("backward")}
-            className="w-full py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 font-bold"
-            disabled={!drones.some((drone) => drone.isConnected)}
-          >
-            Backward
-          </button>
+
+          {/* Flight Controls */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">Flight Controls</h2>
+            <div className="space-y-3">
+              <button
+                onClick={handleTakeoff}
+                className="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Take Off All
+              </button>
+              <button
+                onClick={handleLand}
+                className="w-full bg-amber-600 text-white px-4 py-2.5 rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Land All
+              </button>
+              <button
+                onClick={() => sendCommand("flip")}
+                className="w-full border border-purple-200 text-purple-600 px-4 py-2.5 rounded-lg hover:bg-purple-50 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Perform Flip
+              </button>
+            </div>
+          </div>
+
+          {/* Direction Controls */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">Direction Controls</h2>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => sendCommand("forward")}
+                className="w-full py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Forward
+              </button>
+              <div className="flex gap-2 w-full">
+                <button
+                  onClick={() => sendCommand("left")}
+                  className="flex-1 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                  disabled={!drones.some((drone) => drone.isConnected)}
+                >
+                  Left
+                </button>
+                <button
+                  onClick={() => sendCommand("right")}
+                  className="flex-1 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                  disabled={!drones.some((drone) => drone.isConnected)}
+                >
+                  Right
+                </button>
+              </div>
+              <button
+                onClick={() => sendCommand("backward")}
+                className="w-full py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                disabled={!drones.some((drone) => drone.isConnected)}
+              >
+                Backward
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Drone Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {drones.map((drone) => (
             <DroneCard
@@ -429,9 +418,11 @@ function App() {
             />
           ))}
         </div>
-        <AddDroneForm onAdd={handleAddDrone} />
-
         
+        {/* Manual Drone Addition moved to bottom */}
+        <div className="mt-8 opacity-75 hover:opacity-100 transition-opacity">
+          <AddDroneForm onAdd={handleAddDrone} />
+        </div>
       </div>
     </div>
   );

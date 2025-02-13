@@ -29,8 +29,8 @@ export function DroneCard({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-lg p-6 space-y-4 cursor-pointer relative ${
-        isSelected ? "ring-2 ring-blue-500" : ""
+      className={`bg-white rounded-lg shadow-sm p-6 space-y-4 cursor-pointer relative transition-all ${
+        isSelected ? "ring-2 ring-indigo-500" : ""
       }`}
       onClick={() => onSelect(drone.id, !isSelected)}
     >
@@ -39,41 +39,39 @@ export function DroneCard({
           e.stopPropagation();
           onRemove(drone.id);
         }}
-        className="absolute top-2 right-2 p-1 hover:bg-red-100 rounded-full"
+        className="absolute top-3 right-3 p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
       >
-        <X className="w-4 h-4 text-red-500" />
+        <X className="w-4 h-4 text-slate-400" />
       </button>
 
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-3">
           <input
             type="checkbox"
             checked={isSelected}
             onChange={(e) => e.stopPropagation()}
-            className="w-4 h-4 text-blue-600 rounded"
+            className="w-4 h-4 text-indigo-600 rounded border-slate-300"
           />
-          <h3 className="text-lg font-semibold">{drone.ipAddress}</h3>
+          <h3 className="text-lg font-semibold text-slate-800">{drone.ipAddress}</h3>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${statusColor}`} />
-        </div>
+        <div className={`w-3 h-3 rounded-full ${statusColor}`} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 text-slate-600">
           <Battery className={`w-5 h-5 ${batteryColor}`} />
-          <span>{drone.batteryLevel}%</span>
+          <span className="text-sm">{drone.batteryLevel ?? 'N/A'}%</span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 text-slate-600">
           {drone.status === "airborne" ? (
-            <Plane className="w-5 h-5 text-blue-500" />
+            <Plane className="w-5 h-5 text-indigo-500" />
           ) : (
-            <PlaneLanding className="w-5 h-5 text-gray-500" />
+            <PlaneLanding className="w-5 h-5 text-slate-500" />
           )}
-          <span className="capitalize">{drone.status}</span>
+          <span className="capitalize text-sm">{drone.status}</span>
         </div>
       </div>
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-slate-500">
         Last Update: {drone.lastCommunication ? new Date(drone.lastCommunication).toLocaleString() : 'Never'}
       </div>
     </div>

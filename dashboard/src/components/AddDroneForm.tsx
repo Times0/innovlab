@@ -11,33 +11,33 @@ export function AddDroneForm({ onAdd }: AddDroneFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     onAdd(ipAddress);
     setIpAddress("");
     setError("");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex space-x-4">
-        <div className="flex-1">
+    <div className="bg-white p-6 rounded-lg shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-800 mb-4">Manual Drone Addition</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="flex gap-3">
           <input
             type="text"
             value={ipAddress}
             onChange={(e) => setIpAddress(e.target.value)}
             placeholder="Enter drone IP address"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          <button
+            type="submit"
+            className="px-4 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add</span>
+          </button>
         </div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add Drone</span>
-        </button>
-      </div>
-    </form>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </form>
+    </div>
   );
 }
