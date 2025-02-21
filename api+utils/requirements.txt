@@ -1,5 +1,4 @@
 djitellopy
 rich
-streamlit
 requests
 fastapi[standard]

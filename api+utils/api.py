@@ -1,7 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from typing import Dict, List
-from djitellopy import TelloSwarm, Tello
-import uvicorn
+from djitellopy import TelloSwarm
 from pydantic import BaseModel
 import nmap
 
@@ -16,6 +14,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+NETWORK_RANGE = "192.168.10.0/24"
 
 
 swarm = None  # Global variable to store the TelloSwarm instance
@@ -63,11 +64,9 @@ async def disconnect():
 
 
 @app.get("/get_battery")
-async def get_battery():
+async def get_battery() -> dict[str, int]:
     if not swarm:
-        raise HTTPException(
-            status_code=400, detail="Swarm not connected. Call /connect first"
-        )
+        raise HTTPException(status_code=400, detail="Swarm not connected. Call /connect first")
     battery: dict[str, int] = {}
     for tello in swarm.tellos:
         drone_name = tello.address[0]
@@ -81,9 +80,7 @@ async def get_battery():
 @app.get("/takeoff")
 async def takeoff():
     if not swarm:
-        raise HTTPException(
-            status_code=400, detail="Swarm not connected. Call /connect first"
-        )
+        raise HTTPException(status_code=400, detail="Swarm not connected. Call /connect first")
     swarm.takeoff()
     return {"status": "takeoff"}
 
@@ -91,9 +88,7 @@ async def takeoff():
 @app.get("/land")
 async def land():
     if not swarm:
-        raise HTTPException(
-            status_code=400, detail="Swarm not connected. Call /connect first"
-        )
+        raise HTTPException(status_code=400, detail="Swarm not connected. Call /connect first")
     swarm.land()
     return {"status": "land"}
 
@@ -105,9 +100,7 @@ class DroneCommand(BaseModel):
 @app.post("/command")
 async def execute_command(command_data: DroneCommand):
     if not swarm:
-        raise HTTPException(
-            status_code=400, detail="Swarm not connected. Call /connect first"
-        )
+        raise HTTPException(status_code=400, detail="Swarm not connected. Call /connect first")
 
     try:
         command_name = command_data.command
@@ -124,39 +117,27 @@ async def execute_command(command_data: DroneCommand):
             swarm.parallel(lambda _, tello: tello.move_right(100))
         return {"status": "success", "command": command_data.command}
     except AttributeError:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid command: {command_data.command}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid command: {command_data.command}")
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to execute command: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to execute command: {str(e)}")
 
 
-@app.get("/scan", response_model=List[str])
-async def scan_network():
+@app.get("/scan")
+async def scan_network() -> list[str]:
     """Scan the network for Tello drones and return their IP addresses"""
     try:
         nm = nmap.PortScanner()
         # Assuming default Tello network range, modify if needed
-        network_range = "192.168.10.0/24"
-        nm.scan(hosts=network_range, arguments="-sn")
+        nm.scan(hosts=NETWORK_RANGE, arguments="-sn")
 
         drone_ips = []
         for host in nm.all_hosts():
-            mac_address = nm[host]['addresses'].get('mac', 'Unknown MAC')
-            vendor = nm[host]['vendor'].get(mac_address, 'Unknown Vendor')
+            mac_address = nm[host]["addresses"].get("mac", "Unknown MAC")
+            vendor = nm[host]["vendor"].get(mac_address, "Unknown Vendor")
 
             if vendor == "SZ DJI Technology":
                 drone_ips.append(host)
 
         return drone_ips
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to scan network: {str(e)}"
-        )
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        raise HTTPException(status_code=500, detail=f"Failed to scan network: {str(e)}")

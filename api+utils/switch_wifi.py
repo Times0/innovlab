@@ -6,9 +6,9 @@ tello.connect()
 print(tello.get_battery())
 # tello.takeoff()
 
-login = "InnovLab"
+ssid = "InnovLab"
 password = "PASSWORD" # Put real password here
-tello.connect_to_wifi(login, password)
+tello.connect_to_wifi(ssid, password)
 
 # print(tello.TELLO_IP)
 # print(tello.)
